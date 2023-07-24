@@ -1,6 +1,8 @@
 const express = require("express");
 const app = express();
 
+app.use(express.json());
+
 let persons = [
   {
     id: 1,
@@ -24,7 +26,7 @@ let persons = [
   },
 ];
 
-const PORT = 3001;
+const gereateId = () => Math.floor(Math.random() * 1000000);
 
 app.get("/api/persons", (req, res) => {
   res.json(persons);
@@ -57,11 +59,27 @@ app.delete("/api/persons/:id", (req, res) => {
   }
 });
 
+app.post("/api/persons", (req, res) => {
+  const body = req.body;
+
+  const person = {
+    id: gereateId(),
+    name: body.name,
+    number: body.number,
+  };
+
+  persons = persons.concat(person);
+
+  res.status(201).json(person);
+});
+
 app.get("/info", (req, res) => {
   res.send(
     `<p>Phonebook has info for ${person.length} people</p><p>${new Date()}</p>`
   );
 });
+
+const PORT = 3001;
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
