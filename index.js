@@ -21,6 +21,12 @@ app.use(
 
 app.use(express.static("build"));
 
+app.get("/info", (req, res) => {
+  res.send(
+    `<p>Phonebook has info for ${person.length} people</p><p>${new Date()}</p>`
+  );
+});
+
 let persons = [
   {
     id: 1,
@@ -43,8 +49,6 @@ let persons = [
     number: "39-23-6423122",
   },
 ];
-
-const gereateId = () => Math.floor(Math.random() * 1000000);
 
 app.get("/api/persons", (req, res) => {
   Person.find({}).then((persons) => {
@@ -75,40 +79,25 @@ app.delete("/api/persons/:id", (req, res) => {
 });
 
 app.post("/api/persons", (req, res) => {
-  const body = req.body;
+  const { name, number } = req.body;
 
-  if (!body.name || !body.number) {
+  if (!name || !number) {
     return res.status(400).json({
       error: "name or number is missing",
     });
   }
 
-  const alreadyExists = persons.find((person) => person.name === body.name);
+  const person = new Person({
+    name,
+    number,
+  });
 
-  if (alreadyExists) {
-    return res.status(400).json({
-      error: "name must be unique",
-    });
-  }
-
-  const person = {
-    id: gereateId(),
-    name: body.name,
-    number: body.number,
-  };
-
-  persons = persons.concat(person);
-
-  res.status(201).json(person);
+  person.save().then((savedPerson) => {
+    res.status(201).json(savedPerson);
+  });
 });
 
-app.get("/info", (req, res) => {
-  res.send(
-    `<p>Phonebook has info for ${person.length} people</p><p>${new Date()}</p>`
-  );
-});
-
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
