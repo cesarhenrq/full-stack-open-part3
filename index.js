@@ -79,6 +79,28 @@ app.post("/api/persons", (req, res, next) => {
     .catch((error) => next(error));
 });
 
+app.put("/api/persons/:id", (req, res, next) => {
+  const id = req.params.id;
+
+  const { name, number } = req.body;
+
+  const person = {
+    name,
+    number,
+  };
+
+  Person.findByIdAndUpdate(id, person, { new: true })
+    .then((updatedPerson) => {
+      if (!updatedPerson) {
+        res.statusMessage = `Person with id ${id} not found`;
+        res.status(404).end();
+      }
+
+      res.json(updatedPerson);
+    })
+    .catch((error) => next(error));
+});
+
 app.get("/info", (req, res, next) => {
   Person.find({})
     .then((persons) => {
