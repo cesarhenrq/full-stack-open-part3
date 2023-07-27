@@ -1,2 +1,1 @@
 GET http://localhost:3001/api/persons/64c0c1ccef92e3af3f64bec2
-```

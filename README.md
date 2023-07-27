@@ -4,4 +4,4 @@ Exercises from full stack open course's part 3
 
 ### Deployed app
 
-https://phonebook-2njc.onrender.com
+https://phonebook-upe1.onrender.com/
