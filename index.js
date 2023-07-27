@@ -20,17 +20,15 @@ app.use(express.static("build"));
 app.use(express.json());
 app.use(requestLogger);
 
-app.get("/api/persons", (req, res) => {
+app.get("/api/persons", (req, res, next) => {
   Person.find({})
     .then((persons) => {
       res.json(persons);
     })
-    .catch((error) => {
-      res.status(500).end();
-    });
+    .catch((error) => next(error));
 });
 
-app.get("/api/persons/:id", (req, res) => {
+app.get("/api/persons/:id", (req, res, next) => {
   const id = req.params.id;
 
   Person.findById(id)
@@ -42,12 +40,10 @@ app.get("/api/persons/:id", (req, res) => {
         res.status(404).end();
       }
     })
-    .catch((error) => {
-      res.status(400).send({ error: "malformatted id" });
-    });
+    .catch((error) => next(error));
 });
 
-app.delete("/api/persons/:id", (req, res) => {
+app.delete("/api/persons/:id", (req, res, next) => {
   const id = req.params.id;
 
   Person.findByIdAndRemove(id)
@@ -58,18 +54,16 @@ app.delete("/api/persons/:id", (req, res) => {
       res.statusMessage = `Person with id ${id} not found`;
       res.status(404).end();
     })
-    .catch((error) => {
-      res.status(400).send({ error: "malformatted id" });
-    });
+    .catch((error) => next(error));
 });
 
-app.post("/api/persons", (req, res) => {
+app.post("/api/persons", (req, res, next) => {
   const { name, number } = req.body;
 
   if (!name || !number) {
-    return res.status(400).json({
-      error: "name or number is missing",
-    });
+    const err = new Error("name or number is missing");
+    err.name = "ValidationError";
+    return next(err);
   }
 
   const person = new Person({
@@ -77,12 +71,15 @@ app.post("/api/persons", (req, res) => {
     number,
   });
 
-  person.save().then((savedPerson) => {
-    res.status(201).json(savedPerson);
-  });
+  person
+    .save()
+    .then((savedPerson) => {
+      res.status(201).json(savedPerson);
+    })
+    .catch((error) => next(error));
 });
 
-app.get("/info", (req, res) => {
+app.get("/info", (req, res, next) => {
   Person.find({})
     .then((persons) => {
       res.send(
@@ -91,9 +88,7 @@ app.get("/info", (req, res) => {
         } people</p><p>${new Date()}</p>`
       );
     })
-    .catch((error) => {
-      res.status(500).end();
-    });
+    .catch((error) => next(error));
 });
 
 const unknownEndpoint = (request, response) => {
@@ -101,6 +96,20 @@ const unknownEndpoint = (request, response) => {
 };
 
 app.use(unknownEndpoint);
+
+const errorHandler = (error, request, response, next) => {
+  console.error(error.message);
+
+  if (error.name === "CastError") {
+    return response.status(400).send({ error: "malformatted id" });
+  } else if (error.name === "ValidationError") {
+    return response.status(400).json({ error: error.message });
+  }
+
+  next(error);
+};
+
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 3001;
 
