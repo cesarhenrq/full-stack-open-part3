@@ -60,12 +60,6 @@ app.delete("/api/persons/:id", (req, res, next) => {
 app.post("/api/persons", (req, res, next) => {
   const { name, number } = req.body;
 
-  if (!name || !number) {
-    const err = new Error("name or number is missing");
-    err.name = "ValidationError";
-    return next(err);
-  }
-
   const person = new Person({
     name,
     number,
@@ -89,7 +83,11 @@ app.put("/api/persons/:id", (req, res, next) => {
     number,
   };
 
-  Person.findByIdAndUpdate(id, person, { new: true })
+  Person.findByIdAndUpdate(id, person, {
+    new: true,
+    runValidators: true,
+    context: "query",
+  })
     .then((updatedPerson) => {
       if (!updatedPerson) {
         res.statusMessage = `Person with id ${id} not found`;
